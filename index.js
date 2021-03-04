@@ -1,3 +1,6 @@
+const host = '0.0.0.0';
+const port = process.env.PORT || 3000;
+
 const express = require("express");
 const app = express();
 const dotenv = require("dotenv");
@@ -18,7 +21,7 @@ mongoose.set("useFindAndModify", false);
 mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true }, () => {
     console.log("Connected to db!");
 
-    app.listen(process.env.PORT || 3212, () => console.log("Server Up and running"));
+    app.listen(port, host, () => console.log("Server Up and running"));
 });
 
 // View engine configuration`git 
@@ -68,4 +71,4 @@ app.route("/remove/:id").get((req, res) => {
     });
 });
 
-app.listen(process.env.PORT || 3000, () => console.log("Server Up and running"));
+app.listen(port, host, () => console.log("Server Up and running"));
