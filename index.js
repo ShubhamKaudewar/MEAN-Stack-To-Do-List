@@ -6,18 +6,12 @@ const mongoose = require("mongoose");
 
 const TodoTask = require("./models/TodoTask");
 
-dotenv.config();
-
 app.use("/static", express.static("public"));
-
 app.use(express.urlencoded({ extended: true }));
 
-//connection to db
-mongoose.set("useFindAndModify", false);
-
-mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true }, () => {
+dotenv.config();
+mongoose.connect(process.env.DB_URL).then(()=>{
     console.log("Connected to db!");
-
     app.listen(3212, () => console.log("Server Up and running"));
 });
 
@@ -25,11 +19,16 @@ mongoose.connect(process.env.DB_CONNECT, { useNewUrlParser: true }, () => {
 app.set("view engine", "ejs");
 
 // Get method
-app.get("/", (req, res) => {
-    TodoTask.find({}, (err, tasks) => {
+app.get("/", async (req, res) => {
+    try {
+        const tasks = await TodoTask.find({});
         res.render("todo.ejs", { todoTasks: tasks });
-    });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("An error occurred");
+    }
 });
+
 
 // POST method
 app.post('/',async (req, res) => {
@@ -46,26 +45,39 @@ app.post('/',async (req, res) => {
 });
 
 //UPDATE
-app.route("/edit/:id").get((req, res) => {
-    const id = req.params.id;
-    TodoTask.find({}, (err, tasks) => {
-    res.render("todoEdit.ejs", { todoTasks: tasks, idTask: id });
+app.route("/edit/:id")
+    .get(async (req, res) => {
+        const id = req.params.id;
+        try {
+            const tasks = await TodoTask.find({});
+            res.render("todoEdit.ejs", { todoTasks: tasks, idTask: id });
+        } catch (err) {
+            console.error(err);
+            res.status(500).send("An error occurred");
+        }
+    })
+    .post(async (req, res) => {
+        const id = req.params.id;
+        try {
+            await TodoTask.findByIdAndUpdate(id, { content: req.body.content });
+            res.redirect("/");
+        } catch (err) {
+            console.error(err);
+            res.status(500).send("An error occurred");
+        }
     });
-}).post((req, res) => {
-    const id = req.params.id;
-    TodoTask.findByIdAndUpdate(id, { content: req.body.content }, err => {
-    if (err) return res.send(500, err);
-        res.redirect("/");
-    });
-});
 
 //DELETE
-app.route("/remove/:id").get((req, res) => {
+app.route("/remove/:id").get(async (req, res) => {
     const id = req.params.id;
-    TodoTask.findByIdAndRemove(id, err => {
-        if (err) return res.send(500, err);
-            res.redirect("/");
-    });
+    try {
+        await TodoTask.findByIdAndDelete(id);
+        res.redirect("/");
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("An error occurred");
+    }
 });
+
 
 app.listen(process.env.PORT || 3000, () => console.log("Server Up and running"));
